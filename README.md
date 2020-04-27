@@ -59,7 +59,6 @@ end
 ```ruby
 class User < ApplicationRecord
   has_secure_password
-  mount_uploader :avatar, AvatarUploader
   validates :email, presence: true, uniqueness: true
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }
   validates :username, presence: true, uniqueness: true
@@ -119,7 +118,7 @@ class UsersController < ApplicationController
 
   def user_params
     params.permit(
-      :avatar, :name, :username, :email, :password, :password_confirmation
+      :name, :username, :email, :password, :password_confirmation
     )
   end
 end
@@ -149,6 +148,7 @@ class AuthenticationController < ApplicationController
   end
 end
 ```
+- Migrate database (`rails db:migrate`)
 
 # README
 
