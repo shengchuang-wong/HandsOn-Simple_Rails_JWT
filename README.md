@@ -150,6 +150,12 @@ end
 ```
 - Migrate database (`rails db:migrate`)
 
+#### Testing
+- http://localhost:3000/users - POST(name, username, email, password)
+- http://loachost:3000/auth/login - POST(email, password)
+- http://locahost:3000/users - GET (Auth Token)
+- http://locahost:3000/users/<username> - GET (Auth Token)
+
 # README
 
 This README would normally document whatever steps are necessary to get the
