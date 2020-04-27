@@ -1,3 +1,75 @@
+#### Commands
+- add following into Gemfile
+```
+# Use Json Web Token (JWT) for token based authentication
+gem 'jwt'
+# Use ActiveModel has_secure_password
+gem 'bcrypt', '~> 3.1.7'
+```
+- `bundle install`
+- update routes
+```ruby
+# config/routes.rb
+Rails.application.routes.draw do
+  resources :users, param: :_username
+  post '/auth/login', to: 'authentication#login'
+  get '/*a', to: 'application#not_found'
+end
+```
+- Create JsonWebToken class (app/lib/json_web_token.rb)
+```ruby
+class JsonWebToken
+  SECRET_KEY = Rails.application.secrets.secret_key_base. to_s
+
+  def self.encode(payload, exp = 24.hours.from_now)
+    payload[:exp] = exp.to_i
+    JWT.encode(payload, SECRET_KEY)
+  end
+
+  def self.decode(token)
+    decoded = JWT.decode(token, SECRET_KEY)[0]
+    HashWithIndifferentAccess.new decoded
+  end
+end
+```
+- Create authorize_request function (app/controllers/application_controller.rb)
+```ruby
+class ApplicationController < ActionController::API
+
+  def not_found
+    render json: { error: 'not_found' }
+  end
+
+  def authorize_request
+    header = request.headers['Authorization']
+    header = header.split(' ').last if header
+    begin
+      @decoded = JsonWebToken.decode(header)
+      @current_user = User.find(@decoded[:user_id])
+    rescue ActiveRecord::RecordNotFound => e
+      render json: { errors: e.message }, status: :unauthorized
+    rescue JWT::DecodeError => e
+      render json: { errors: e.message }, status: :unauthorized
+    end
+  end
+end
+```
+- Create user model (`rails g model user name:string username:string email:string password_digest:string`) (remembder to db:setup database first)
+- add user validation (app/models/user.rb)
+```ruby
+class User < ApplicationRecord
+  has_secure_password
+  mount_uploader :avatar, AvatarUploader
+  validates :email, presence: true, uniqueness: true
+  validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }
+  validates :username, presence: true, uniqueness: true
+  validates :password,
+            length: { minimum: 6 },
+            if: -> { new_record? || !password.nil? }
+end
+```
+- Create user controller `rails g controller users`
+
 # README
 
 This README would normally document whatever steps are necessary to get the
